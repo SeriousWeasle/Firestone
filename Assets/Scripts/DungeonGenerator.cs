@@ -3,95 +3,38 @@ using UnityEngine;
 
 public class DungeonGenerator : MonoBehaviour
 {
-    [Header("Chunk data")]
-    public Vector3 chunkSize;
-
-    [Header("Maximum room offsets (chunks)")]
-    public int maxXOffset;
-    public int maxYOffset;
-    public int maxZOffset;
-
     [Header("Dungeon size")]
-    public int minimumRooms;
-    public float minStartExitDist;
+    public int minPropagationRoomCount;
+    public int maxPropagationRoomCount;
+    [Header("Start and exit room types")]
+    public List<GameObject> startRoomPrefabs;
+    public List<GameObject> exitRoomPrefabs;
+    [Header("Propagation and termination rooms")]
+    public List<GameObject> propagationRoomPrefabs;
+    public List<GameObject> terminationRoomPrefabs;
+    [Header("Where rooms are and where rooms can be")]
+    public List<Vector3> occupiedGridBlocks;
+    public List<Vector3> mountPointLocations;
 
-    [Header("Debug stuff")]
-    public GameObject startChunk;
-    public GameObject exitChunk;
-    public GameObject randomChunk;
-
-    [Header("Look inside generator")]
-    public List<Chunk> chunks;
-    public GeneratorState generatorState = GeneratorState.Planning;
-
+    int propagationRoomCount;
     // Start is called before the first frame update
     void Start()
     {
-        planStartExitChunk();
+        //Add start room
+        GameObject startRoom = Instantiate(startRoomPrefabs[Random.Range(0, startRoomPrefabs.Count - 1)]);
+        //get occupied blocks and stuff from room
+        RoomData data = startRoom.GetComponent<Room>().getData();
+        //Add occupied grid blocks and mount points for start room
+        occupiedGridBlocks.AddRange(data.occupiedBlocks);
+        mountPointLocations.AddRange(data.mountPoints);
+
+        //get a number for propagation room count
+        propagationRoomCount = Random.Range(minPropagationRoomCount, maxPropagationRoomCount);
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
-
-    //function for adding start and exit chunk to floorplan so there is at least a minimum distance between them
-    void planStartExitChunk()
-    {
-        //choose random place for start room in bounds
-        float startX = Mathf.Round((Random.value * chunkSize.x * 2) - chunkSize.x);
-        float startY = Mathf.Round((Random.value * chunkSize.y * 2) - chunkSize.y);
-        float startZ = Mathf.Round((Random.value * chunkSize.z * 2) - chunkSize.z);
-        //make vector3 from random pos
-        Vector3 startPos = new Vector3(startX, startY, startZ);
-        //add the start room to the chunks
-        chunks.Add(new Chunk(startPos, ChunkType.Start));
-        //bool for storing if exit is far enough away
-        bool exitIsFarEnough = false;
-        //while the exit is not far enough away
-        while (!exitIsFarEnough)
-        {
-            //pick random position
-            float exitX = Mathf.Round((Random.value * chunkSize.x * 2) - chunkSize.x);
-            float exitY = Mathf.Round((Random.value * chunkSize.y * 2) - chunkSize.y);
-            float exitZ = Mathf.Round((Random.value * chunkSize.z * 2) - chunkSize.z);
-            //make vector3 for exit pos
-            Vector3 exitPos = new Vector3(exitX, exitY, exitZ);
-            //if distance is greater or equal to minimum distance, add room and break loop
-            if ((exitPos - startPos).magnitude >= minStartExitDist)
-            {
-                exitIsFarEnough = true;
-                //add the exit room to the chunks
-                chunks.Add(new Chunk(exitPos, ChunkType.Exit));
-            }
-        }
-    }
-}
-
-//chunk type enumerator
-public enum ChunkType
-{
-    Start, Exit, Random, Special
-}
-
-//struct for storing chunk data
-[System.Serializable]
-public struct Chunk
-{
-    //stored data
-    public Vector3 gridPos;
-    public ChunkType chunkType;
-    //constructor
-    public Chunk(Vector3 pos, ChunkType type)
-    {
-        this.gridPos = pos;
-        this.chunkType = type;
-    }
-}
-
-//generator state enum
-public enum GeneratorState
-{
-    Planning, Identifying, Rendering, Done
 }
